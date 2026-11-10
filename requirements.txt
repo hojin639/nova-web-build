@@ -1,0 +1,5 @@
+flask>=3.0
+flask-socketio>=5.3
+cryptography>=42.0
+requests>=2.31
+eventlet>=0.35

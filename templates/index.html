@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOVA</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d0f;--bg2:#151518;--bg3:#1a1a1f;--bg4:#222228;
+  --fg:#e8e8ec;--fg2:#a0a0a8;--fg3:#68686e;
+  --accent:#7c5cfc;--accent2:#9d82ff;--accent-bg:rgba(124,92,252,.12);
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;
+  --border:#2a2a30;--radius:8px;--font:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;overflow:hidden}
+button{cursor:pointer;border:none;font-family:inherit;font-size:inherit}
+input,select{font-family:inherit;font-size:inherit}
+.hidden{display:none!important}
+
+/* === LICENSE SCREEN === */
+#license-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg)}
+.license-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:48px;width:420px;text-align:center}
+.license-box h1{font-size:32px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.license-box p{color:var(--fg2);margin-bottom:24px;font-size:13px}
+.license-input{width:100%;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--fg);font-size:16px;text-align:center;letter-spacing:2px;outline:none;transition:border .2s}
+.license-input:focus{border-color:var(--accent)}
+.license-input::placeholder{color:var(--fg3);letter-spacing:0}
+.license-btn{width:100%;margin-top:16px;padding:12px;background:var(--accent);color:#fff;border-radius:var(--radius);font-weight:600;font-size:15px;transition:background .2s}
+.license-btn:hover{background:var(--accent2)}
+.license-btn:disabled{opacity:.5;cursor:not-allowed}
+.license-err{color:var(--red);margin-top:12px;font-size:13px;min-height:20px}
+.license-info{color:var(--green);margin-top:12px;font-size:13px}
+
+/* === MAIN APP === */
+#app{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:20px;font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-nav{flex:1;padding:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius);color:var(--fg2);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500}
+.nav-item:hover{background:var(--bg3);color:var(--fg)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent2)}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);font-size:12px;color:var(--fg3)}
+.sidebar-footer .plan{color:var(--accent2);font-weight:600}
+
+/* CONTENT */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.topbar h2{font-size:16px;font-weight:600}
+.topbar-actions{display:flex;gap:8px}
+
+/* PAGES */
+.page{display:none;flex:1;overflow-y:auto;padding:24px}
+.page.active{display:flex;flex-direction:column;gap:20px}
+
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--fg3);margin-bottom:4px}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.hits{color:var(--green)}
+.stat-card .value.bans{color:var(--yellow)}
+.stat-card .value.invalid{color:var(--red)}
+.stat-card .value.twofa{color:var(--blue)}
+.stat-card .value.errors{color:var(--red)}
+.stat-card .value.free{color:var(--fg3)}
+
+/* PROGRESS */
+.progress-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.progress-bar-bg{width:100%;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:8px}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .3s;width:0}
+.progress-text{display:flex;justify-content:space-between;font-size:12px;color:var(--fg2);margin-top:6px}
+
+/* CONTROLS */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:8px 20px;border-radius:var(--radius);font-weight:600;font-size:13px;transition:all .15s}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:var(--accent2)}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--fg2)}.btn-outline:hover{border-color:var(--fg3);color:var(--fg)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* FILE UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;color:var(--fg3);cursor:pointer;transition:border-color .2s;background:var(--bg2)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);color:var(--fg2)}
+.upload-zone input{display:none}
+
+/* RESULTS TABLE */
+.results-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;flex:1;display:flex;flex-direction:column}
+.results-tabs{display:flex;border-bottom:1px solid var(--border)}
+.results-tab{padding:10px 18px;font-size:12px;font-weight:600;color:var(--fg3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.results-tab:hover{color:var(--fg2)}
+.results-tab.active{color:var(--accent2);border-bottom-color:var(--accent)}
+.results-tab .count{margin-left:5px;background:var(--bg4);padding:1px 7px;border-radius:10px;font-size:11px}
+.results-body{flex:1;overflow-y:auto;font-family:'Consolas','Monaco','Courier New',monospace;font-size:12px;padding:0}
+.results-body table{width:100%;border-collapse:collapse}
+.results-body th,.results-body td{padding:6px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.results-body th{position:sticky;top:0;background:var(--bg3);color:var(--fg2);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.results-body tr:hover td{background:var(--bg3)}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tag-ok{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-banned{background:rgba(245,158,11,.15);color:var(--yellow)}
+.tag-invalid{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-2fa{background:rgba(59,130,246,.15);color:var(--blue)}
+.tag-error{background:rgba(239,68,68,.1);color:#f87171}
+.tag-free{background:rgba(160,160,168,.1);color:var(--fg3)}
+.export-btn{padding:6px 14px;font-size:12px;background:var(--bg3);border:1px solid var(--border);color:var(--fg2);border-radius:var(--radius);cursor:pointer}
+.export-btn:hover{border-color:var(--fg3)}
+
+/* SETTINGS */
+.settings-group{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.settings-group h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--fg)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.setting-row label{color:var(--fg2);font-size:13px}
+.setting-row input,.setting-row select{background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:6px 10px;border-radius:6px;width:140px;outline:none}
+.setting-row input:focus,.setting-row select:focus{border-color:var(--accent)}
+
+/* LIVE LOG */
+.live-log{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:'Consolas',monospace;font-size:11px;color:var(--fg3);max-height:200px;overflow-y:auto}
+.live-log .entry{padding:2px 0;border-bottom:1px solid rgba(42,42,48,.5)}
+.live-log .entry.hit{color:var(--green)}
+.live-log .entry.ban{color:var(--yellow)}
+.live-log .entry.invalid{color:var(--red)}
+.live-log .entry.error{color:#f87171}
+.live-log .entry.twofa{color:var(--blue)}
+
+@media(max-width:768px){
+  .sidebar{width:60px}.sidebar-logo{padding:12px;font-size:14px;text-align:center}
+  .nav-item span{display:none}.nav-item{justify-content:center;padding:10px}
+  .page{padding:12px}.stat-row{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- LICENSE SCREEN -->
+<div id="license-screen">
+  <div class="license-box">
+    <h1>NOVA</h1>
+    <p>Valorant &amp; LoL Account Checker</p>
+    <input class="license-input" id="license-key" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off" spellcheck="false">
+    <button class="license-btn" id="license-submit" onclick="verifyLicense()">Verify License</button>
+    <div class="license-err" id="license-err"></div>
+    <div class="license-info" id="license-info"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">NOVA</div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" data-page="results" onclick="showPage('results')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        <span>Results</span>
+      </div>
+      <div class="nav-item" data-page="settings" onclick="showPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Settings</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="plan" id="plan-label">—</div>
+      <div id="expires-label" style="margin-top:4px">—</div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <div class="topbar">
+      <h2 id="page-title">Dashboard</h2>
+      <div class="topbar-actions">
+        <button class="btn btn-outline" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-row">
+        <div class="stat-card"><div class="label">Checked</div><div class="value" id="s-checked">0</div></div>
+        <div class="stat-card"><div class="label">Total</div><div class="value" id="s-total">0</div></div>
+        <div class="stat-card"><div class="label">Hits</div><div class="value hits" id="s-hits">0</div></div>
+        <div class="stat-card"><div class="label">Bans</div><div class="value bans" id="s-bans">0</div></div>
+        <div class="stat-card"><div class="label">2FA</div><div class="value twofa" id="s-twofa">0</div></div>
+        <div class="stat-card"><div class="label">Invalid</div><div class="value invalid" id="s-invalid">0</div></div>
+        <div class="stat-card"><div class="label">Errors</div><div class="value errors" id="s-errors">0</div></div>
+        <div class="stat-card"><div class="label">Free</div><div class="value free" id="s-free">0</div></div>
+      </div>
+
+      <div class="progress-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:13px">Progress</span>
+          <span id="status-badge" style="font-size:12px;color:var(--fg3)">Idle</span>
+        </div>
+        <div class="progress-bar-bg"><div class="progress-bar" id="progress-bar"></div></div>
+        <div class="progress-text">
+          <span id="progress-left">0 / 0</span>
+          <span id="progress-pct">0%</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('combo-file').click()">
+          <input type="file" id="combo-file" accept=".txt,.csv" onchange="handleFileUpload(event)">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div id="upload-label">Drop combo file or click to upload<br><small style="color:var(--fg3)">user:pass format, .txt</small></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="mode-select" style="background:var(--bg3);border:1px solid var(--border);color:var(--fg);padding:8px 12px;border-radius:var(--radius)">
+            <option value="valorant">Valorant</option>
+            <option value="lol">LoL</option>
+            <option value="both">Both</option>
+          </select>
+          <button class="btn btn-accent" id="btn-start" onclick="startCheck()" disabled>Start</button>
+          <button class="btn btn-outline" id="btn-pause" onclick="pauseCheck()" disabled>Pause</button>
+          <button class="btn btn-danger" id="btn-stop" onclick="stopCheck()" disabled>Stop</button>
+        </div>
+      </div>
+
+      <div class="live-log" id="live-log"></div>
+    </div>
+
+    <!-- Results Page -->
+    <div class="page" id="page-results">
+      <div class="results-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 12px 0">
+          <div class="results-tabs" id="results-tabs">
+            <div class="results-tab active" data-cat="hits" onclick="showResultTab('hits')">Hits <span class="count" id="rt-hits">0</span></div>
+            <div class="results-tab" data-cat="bans" onclick="showResultTab('bans')">Bans <span class="count" id="rt-bans">0</span></div>
+            <div class="results-tab" data-cat="twofa" onclick="showResultTab('twofa')">2FA <span class="count" id="rt-twofa">0</span></div>
+            <div class="results-tab" data-cat="invalid" onclick="showResultTab('invalid')">Invalid <span class="count" id="rt-invalid">0</span></div>
+            <div class="results-tab" data-cat="free" onclick="showResultTab('free')">Free <span class="count" id="rt-free">0</span></div>
+            <div class="results-tab" data-cat="errors" onclick="showResultTab('errors')">Errors <span class="count" id="rt-errors">0</span></div>
+          </div>
+          <button class="export-btn" onclick="exportResults()">Export</button>
+        </div>
+        <div class="results-body" id="results-body">
+          <table><thead><tr><th>Account</th><th>Status</th><th>Info</th></tr></thead>
+          <tbody id="results-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div class="page" id="page-settings">
+      <div class="settings-group">
+        <h3>Checker Settings</h3>
+        <div class="setting-row">
+          <label>Threads</label>
+          <input type="number" id="set-threads" value="5" min="1" max="50" onchange="saveSettings()">
+        </div>
+        <div class="setting-row">
+          <label>Game Mode</label>
+          <select id="set-mode" onchange="saveSettings()">
+            <option value="valorant">Valorant</option>
+            <option value="lol">LoL</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-group">
+        <h3>License</h3>
+        <div class="setting-row"><label>Key</label><span id="set-key" style="color:var(--accent2);font-family:monospace">—</span></div>
+        <div class="setting-row"><label>Plan</label><span id="set-plan">—</span></div>
+        <div class="setting-row"><label>Expires</label><span id="set-expires">—</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+let socket = null;
+let currentResultTab = 'hits';
+
+/* --- LICENSE --- */
+const keyInput = document.getElementById('license-key');
+keyInput.addEventListener('input', function(){
+  let v = this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+  if(v.length>4) v = v.slice(0,4)+'-'+v.slice(4);
+  if(v.length>9) v = v.slice(0,9)+'-'+v.slice(9);
+  if(v.length>14) v = v.slice(0,14);
+  this.value = v;
+});
+keyInput.addEventListener('keydown', e => { if(e.key==='Enter') verifyLicense(); });
+
+async function checkCachedLicense(){
+  try {
+    const r = await fetch('/api/license/cached');
+    const d = await r.json();
+    if(d.valid){ enterApp(d); return; }
+  } catch(e){}
+}
+checkCachedLicense();
+
+async function verifyLicense(){
+  const key = keyInput.value.trim();
+  const errEl = document.getElementById('license-err');
+  const infoEl = document.getElementById('license-info');
+  const btn = document.getElementById('license-submit');
+  errEl.textContent = ''; infoEl.textContent = '';
+  if(!key){ errEl.textContent = '키를 입력하세요'; return; }
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  try {
+    const r = await fetch('/api/license/verify', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key})});
+    const d = await r.json();
+    if(d.valid){ infoEl.textContent = 'License verified!'; setTimeout(()=>enterApp(d), 600); }
+    else { errEl.textContent = d.error || 'Invalid license'; }
+  } catch(e){ errEl.textContent = 'Network error'; }
+  btn.disabled = false; btn.textContent = 'Verify License';
+}
+
+function enterApp(info){
+  document.getElementById('license-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('plan-label').textContent = (info.plan||'').toUpperCase() || 'ACTIVE';
+  document.getElementById('expires-label').textContent = info.expires_at ? `Expires: ${info.expires_at}` : 'Permanent';
+  document.getElementById('set-key').textContent = keyInput.value || '***';
+  document.getElementById('set-plan').textContent = (info.plan||'').toUpperCase() || 'ACTIVE';
+  document.getElementById('set-expires').textContent = info.expires_at || 'Permanent';
+  if(info.max_threads) document.getElementById('set-threads').max = info.max_threads;
+  connectSocket();
+  loadSettings();
+}
+
+function logout(){
+  sessionStorage.clear();
+  location.reload();
+}
+
+/* --- SOCKET --- */
+function connectSocket(){
+  socket = io();
+  socket.on('progress', updateStats);
+  socket.on('check_result', onResult);
+}
+
+/* --- NAVIGATION --- */
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
+  document.getElementById('page-title').textContent = name.charAt(0).toUpperCase()+name.slice(1);
+  if(name==='results') refreshResults();
+}
+
+/* --- FILE UPLOAD --- */
+const uploadZone = document.getElementById('upload-zone');
+['dragenter','dragover'].forEach(e=>uploadZone.addEventListener(e,ev=>{ev.preventDefault();uploadZone.classList.add('drag')}));
+['dragleave','drop'].forEach(e=>uploadZone.addEventListener(e,ev=>{ev.preventDefault();uploadZone.classList.remove('drag')}));
+uploadZone.addEventListener('drop', ev => {
+  const f = ev.dataTransfer.files[0];
+  if(f) uploadFile(f);
+});
+function handleFileUpload(ev){
+  const f = ev.target.files[0];
+  if(f) uploadFile(f);
+}
+async function uploadFile(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  document.getElementById('upload-label').innerHTML = 'Loading...';
+  try {
+    const r = await fetch('/api/combos/load', {method:'POST', body:fd});
+    const d = await r.json();
+    if(d.error){ document.getElementById('upload-label').innerHTML = `<span style="color:var(--red)">${d.error}</span>`; return; }
+    document.getElementById('upload-label').innerHTML = `<span style="color:var(--green)">${d.loaded.toLocaleString()} combos loaded</span><br><small>${file.name}</small>`;
+    document.getElementById('s-total').textContent = d.loaded;
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('set-threads').value = d.threads;
+  } catch(e){ document.getElementById('upload-label').innerHTML = '<span style="color:var(--red)">Upload failed</span>'; }
+}
+
+/* --- CHECKER CONTROLS --- */
+async function startCheck(){
+  const mode = document.getElementById('mode-select').value;
+  const threads = parseInt(document.getElementById('set-threads').value) || 5;
+  try {
+    const r = await fetch('/api/check/start', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode, threads})});
+    const d = await r.json();
+    if(d.status==='started'){
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-pause').disabled = false;
+      document.getElementById('btn-stop').disabled = false;
+      document.getElementById('status-badge').textContent = 'Running';
+      document.getElementById('status-badge').style.color = 'var(--green)';
+    }
+  } catch(e){}
+}
+async function pauseCheck(){
+  try {
+    const r = await fetch('/api/check/pause', {method:'POST'});
+    const d = await r.json();
+    const btn = document.getElementById('btn-pause');
+    const badge = document.getElementById('status-badge');
+    if(d.paused){ btn.textContent='Resume'; badge.textContent='Paused'; badge.style.color='var(--yellow)'; }
+    else { btn.textContent='Pause'; badge.textContent='Running'; badge.style.color='var(--green)'; }
+  } catch(e){}
+}
+async function stopCheck(){
+  try {
+    await fetch('/api/check/stop', {method:'POST'});
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-pause').disabled = true;
+    document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-pause').textContent = 'Pause';
+    document.getElementById('status-badge').textContent = 'Stopped';
+    document.getElementById('status-badge').style.color = 'var(--red)';
+  } catch(e){}
+}
+
+/* --- STATS UPDATE --- */
+function updateStats(s){
+  document.getElementById('s-checked').textContent = s.checked;
+  document.getElementById('s-total').textContent = s.total;
+  document.getElementById('s-hits').textContent = s.hits;
+  document.getElementById('s-bans').textContent = s.bans;
+  document.getElementById('s-twofa').textContent = s.twofa;
+  document.getElementById('s-invalid').textContent = s.invalid;
+  document.getElementById('s-errors').textContent = s.errors;
+  document.getElementById('s-free').textContent = s.free;
+  ['hits','bans','twofa','invalid','free','errors'].forEach(k=>{
+    const el = document.getElementById('rt-'+k);
+    if(el) el.textContent = s[k];
+  });
+  const pct = s.total ? Math.round(s.checked/s.total*100) : 0;
+  document.getElementById('progress-bar').style.width = pct+'%';
+  document.getElementById('progress-left').textContent = `${s.checked} / ${s.total}`;
+  document.getElementById('progress-pct').textContent = pct+'%';
+  if(s.checked>=s.total && s.total>0){
+    document.getElementById('status-badge').textContent = 'Completed';
+    document.getElementById('status-badge').style.color = 'var(--accent2)';
+    document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-pause').disabled = true;
+    document.getElementById('btn-stop').disabled = true;
+  }
+}
+
+function onResult(entry){
+  const log = document.getElementById('live-log');
+  const cls = {ok:'hit',banned:'ban',invalid:'invalid','2fa':'twofa',error:'error'}[entry.status]||'';
+  const info = entry.info||{};
+  let extra = '';
+  if(entry.status==='ok'){
+    const parts = [];
+    if(info.rank) parts.push(info.rank);
+    if(info.skins_count) parts.push(info.skins_count+' skins');
+    if(info.vp) parts.push(info.vp+' VP');
+    extra = parts.length ? ' | '+parts.join(' | ') : '';
+  }
+  const div = document.createElement('div');
+  div.className = 'entry '+cls;
+  div.textContent = `[${entry.status.toUpperCase()}] ${entry.user}:${'*'.repeat(Math.min(entry.pass.length,6))}${extra}`;
+  log.appendChild(div);
+  if(log.children.length > 500) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+/* --- RESULTS --- */
+function showResultTab(cat){
+  currentResultTab = cat;
+  document.querySelectorAll('.results-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.results-tab[data-cat="${cat}"]`).classList.add('active');
+  refreshResults();
+}
+async function refreshResults(){
+  try {
+    const r = await fetch(`/api/results/${currentResultTab}`);
+    const d = await r.json();
+    const tbody = document.getElementById('results-tbody');
+    tbody.innerHTML = '';
+    (d.items||[]).forEach(e=>{
+      const tr = document.createElement('tr');
+      const info = e.info||{};
+      const parts = [];
+      for(const k of ['rank','level','skins_count','vp','summoner_level_lst','blue_essence','champions_count']){
+        if(info[k]!=null && info[k]!=='' && info[k]!==0) parts.push(`${k}: ${info[k]}`);
+      }
+      const tagCls = {ok:'tag-ok',banned:'tag-banned',invalid:'tag-invalid','2fa':'tag-2fa',error:'tag-error',free:'tag-free'}[e.status]||'';
+      tr.innerHTML = `<td>${e.user}:${'*'.repeat(Math.min((e.pass||'').length,4))}</td>
+        <td><span class="tag ${tagCls}">${e.status}</span></td>
+        <td style="color:var(--fg3);font-size:11px">${parts.join(' | ')||e.msg||''}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch(e){}
+}
+function exportResults(){
+  window.open(`/api/results/${currentResultTab}/export`);
+}
+
+/* --- SETTINGS --- */
+async function loadSettings(){
+  try {
+    const r = await fetch('/api/settings');
+    const d = await r.json();
+    document.getElementById('set-threads').value = d.threads;
+    document.getElementById('set-mode').value = d.mode;
+    document.getElementById('mode-select').value = d.mode;
+  } catch(e){}
+}
+async function saveSettings(){
+  const threads = parseInt(document.getElementById('set-threads').value)||5;
+  const mode = document.getElementById('set-mode').value;
+  document.getElementById('mode-select').value = mode;
+  try {
+    await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({threads, mode})});
+  } catch(e){}
+}
+
+/* poll stats every 2s as fallback */
+setInterval(async()=>{
+  try {
+    const r = await fetch('/api/check/stats');
+    const d = await r.json();
+    updateStats(d);
+    if(!d.running && d.checked>0 && d.checked>=d.total){
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-pause').disabled = true;
+      document.getElementById('btn-stop').disabled = true;
+    }
+  } catch(e){}
+}, 2000);
+</script>
+</body>
+</html>
