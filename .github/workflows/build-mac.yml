@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +34,7 @@ jobs:
             --hidden-import dns.rdatatype \
             --hidden-import engineio.async_drivers.eventlet \
             --hidden-import flask_socketio \
-            --target-arch universal2 \
+            --target-arch x86_64 \
             run.py
 
       - name: Package
