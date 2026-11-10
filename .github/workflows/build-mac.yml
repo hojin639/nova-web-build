@@ -1,0 +1,51 @@
+name: Build macOS
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller \
+            --onefile \
+            --name NOVA-Web \
+            --add-data "templates:templates" \
+            --add-data "static:static" \
+            --hidden-import eventlet \
+            --hidden-import eventlet.hubs.epolls \
+            --hidden-import eventlet.hubs.kqueue \
+            --hidden-import eventlet.hubs.selects \
+            --hidden-import dns.resolver \
+            --hidden-import dns.rdatatype \
+            --hidden-import engineio.async_drivers.eventlet \
+            --hidden-import flask_socketio \
+            --target-arch universal2 \
+            run.py
+
+      - name: Package
+        run: |
+          cd dist
+          chmod +x NOVA-Web
+          tar czf NOVA-Web-macOS.tar.gz NOVA-Web
+          ls -la
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-Web-macOS
+          path: dist/NOVA-Web-macOS.tar.gz
+          retention-days: 7
